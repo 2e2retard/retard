@@ -10,6 +10,14 @@ local buffer = buffer.fromstring("\1\1\0\1")
 local farm = get_farm(lp)
 local run, hidenotif = false, false
 
+local h = game:GetService("Players").LocalPlayer.Character:WaitForChild("Humanoid")
+h.StateChanged:Connect(function(_, s)
+	if s == Enum.HumanoidStateType.Idle then
+		print("detected idle")
+		h:ChangeState(Enum.HumanoidStateType.Jumping)
+	end
+end)
+
 for _, v in ipairs(game:GetService("Lighting"):GetChildren()) do
 	if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") then
 		v.Enabled = false

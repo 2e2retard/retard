@@ -10,21 +10,6 @@ local farm = get_farm(lp)
 local run, hidenotif = false, false
 local method = 1
 
-for _, v in ipairs(game:GetService("Lighting"):GetChildren()) do
-	if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") then
-		v.Enabled = false
-	end
-end
-
-local char = lp.Character
-if char then
-	for _, v in ipairs(char:GetDescendants()) do
-		if v:IsA("ParticleEmitter") or v:IsA("Trail") then
-			v.Enabled = false
-		end
-	end
-end
-
 local ui = wind_ui:CreateWindow({
 	Title = "Summer Harvest",
 	Icon = "rbxassetid://129260712070622",
@@ -66,7 +51,6 @@ local function collect()
 								end
 							else
 								net:FireServer(buffer, { i })
-								task.wait()
 								rs.GameEvents.SummerHarvestRemoteEvent:FireServer("SubmitAllPlants")
 							end
 						end

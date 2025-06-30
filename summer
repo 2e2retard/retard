@@ -1,5 +1,3 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/2e2retard/retard/refs/heads/main/backpack.lua"))()
-
 local wind_ui = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 local players, rs = game:GetService("Players"), game:GetService("ReplicatedStorage")
 local lp = players.LocalPlayer
@@ -9,14 +7,7 @@ local net = rs:WaitForChild("ByteNetReliable")
 local buffer = buffer.fromstring("\1\1\0\1")
 local farm = get_farm(lp)
 local run, hidenotif = false, false
-
-local h = game:GetService("Players").LocalPlayer.Character:WaitForChild("Humanoid")
-h.StateChanged:Connect(function(_, s)
-	if s == Enum.HumanoidStateType.Idle then
-		print("detected idle")
-		h:ChangeState(Enum.HumanoidStateType.Jumping)
-	end
-end)
+local method = 1
 
 for _, v in ipairs(game:GetService("Lighting"):GetChildren()) do
 	if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") then
@@ -71,12 +62,18 @@ local function collect()
 					if f2 then
 						for _, i in ipairs(f2:GetChildren()) do
 							if not run then break end
-							if inv:IsMaxInventory(lp.Backpack) then
-								rs.GameEvents.SummerHarvestRemoteEvent:FireServer("SubmitAllPlants")
-								task.wait(0.05)
-								break
+							if method == 1 then
+								if inv:IsMaxInventory(lp.Backpack) then
+									rs.GameEvents.SummerHarvestRemoteEvent:FireServer("SubmitAllPlants")
+									task.wait()
+									break
+								else
+									net:FireServer(buffer, { i })
+								end
 							else
-							    net:FireServer(buffer, { i })
+								net:FireServer(buffer, { i })
+								task.wait()
+								rs.GameEvents.SummerHarvestRemoteEvent:FireServer("SubmitAllPlants")
 							end
 						end
 					end
@@ -95,9 +92,17 @@ tab:Toggle({
 	Callback = function(v) run = v end
 })
 
-tab:Button({
-	Title = "Collect Summer Fruits",
-	Callback = function() collect() end
+tab:Dropdown({
+    Title = "Submit Method:",
+    Values = { "When Backpack Full", "After Harvest" },
+    Value = "When Backpack Full",
+    Callback = function(option)
+        if option:find("Backpack Full") then
+            method = 1
+        else
+            method = 2
+        end
+    end
 })
 
 tab:Button({

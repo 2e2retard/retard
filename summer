@@ -5,6 +5,7 @@ local get_farm = require(rs.Modules.GetFarm)
 local inv = require(rs.Modules.InventoryService)
 local net = rs:WaitForChild("ByteNetReliable")
 local buffer = buffer.fromstring("\1\1\0\1")
+local plant_traits_data = require(game:GetService("ReplicatedStorage").Modules.PlantTraitsData)
 local farm = get_farm(lp)
 local run, hidenotif = false, false
 local method = 1
@@ -23,13 +24,6 @@ if char then
 		end
 	end
 end
-
-local fruits = {
-	"Pineapple", "Watermelon", "Cauliflower", "Green Apple", "Banana", "Avocado", "Kiwi",
-	"Prickly Pear", "Feijoa", "Sugar Apple", "Loquat", "Wild Carrot", "Pear", "Cantaloupe",
-	"Parasol Flower", "Rosy Delight", "Elephant Ears", "Bell Pepper", "Carrot",
-	"Blueberry", "Tomato", "Strawberry"
-}
 
 local ui = wind_ui:CreateWindow({
 	Title = "Summer Harvest",
@@ -55,7 +49,7 @@ local function collect()
 	task.spawn(function()
 		for _, p in ipairs(farm.Important.Plants_Physical:GetChildren()) do
 			if not run then break end
-			for _, f in ipairs(fruits) do
+			for _, f in ipairs(plat_traits_data.Summer) do
 				if p.Name:find(f, 1, true) then
 					net:FireServer(buffer, { p })
 					local f2 = p:FindFirstChild("Fruits", true)

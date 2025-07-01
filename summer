@@ -8,7 +8,7 @@ local buffer = buffer.fromstring("\1\1\0\1")
 local plant_traits_data = require(rs.Modules.PlantTraitsData)
 local farm = get_farm(lp)
 local run, hidenotif = false, false
-local method, collecting, target = 1, false, 0
+local method, collecting, target, delay = 1, false, 0, 0.05
 local blacklist, fruit = {}, {}
 
 for name in pairs(plant_traits_data.Summer) do
@@ -52,7 +52,7 @@ local function collect()
 					break
 				end
 			end
-			task.wait()
+			task.wait(delay or nil)
 		end
 		collecting = false
 	end)
@@ -79,6 +79,16 @@ tab:Toggle({
 	Title = "Auto Summer Event",
 	Value = false,
 	Callback = function(v) run = v end
+})
+
+tab:Slider({
+    Title = "Delay",
+    Value = {
+        Min = 0.01,
+        Max = 1,
+        Default = 0.05,
+    },
+    Callback = function(value) delay = value end
 })
 
 tab:Dropdown({
@@ -170,6 +180,6 @@ task.spawn(function()
 			end
 		end
 
-		task.wait(0.1)
+		task.wait()
 	end
 end)

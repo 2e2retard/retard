@@ -52,7 +52,7 @@ local function collect()
 					break
 				end
 			end
-			task.wait(.075)
+			task.wait()
 		end
 		collecting = false
 	end)

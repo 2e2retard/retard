@@ -5,28 +5,21 @@ local get_farm = require(rs.Modules.GetFarm)
 local inv = require(rs.Modules.InventoryService)
 local net = rs:WaitForChild("ByteNetReliable")
 local buffer = buffer.fromstring("\1\1\0\1")
-local plant_traits_data = require(game:GetService("ReplicatedStorage").Modules.PlantTraitsData)
+local plant_traits_data = require(rs.Modules.PlantTraitsData)
 local farm = get_farm(lp)
 local run, hidenotif = false, false
-local method = 1
+local method, collecting, target = 1, false, 0
+local blacklist, fruit = {}, {}
 
-local ui = wind_ui:CreateWindow({
-	Title = "Summer Harvest",
-	Icon = "rbxassetid://129260712070622",
-	IconThemed = true,
-	Author = "another21",
-	Folder = "nah",
-	Size = UDim2.fromOffset(580, 460),
-	Transparent = true,
-	Theme = "Dark",
-	HideSearchBar = true,
-	User = {Enabled = true},
-	SideBarWidth = 200,
-	ScrollBarEnabled = true,
-})
+for name in pairs(plant_traits_data.Summer) do
+	table.insert(fruit, name)
+end
 
-local tab = ui:Section({ Title = "Menu", Opened = true }):Tab({ Title = "Main", Icon = "home" })
-local collecting = false
+local function isBlacklisted(name)
+	for _, b in ipairs(blacklist) do
+		if name == b then return true end
+	end
+end
 
 local function collect()
 	if collecting then return end
@@ -34,7 +27,8 @@ local function collect()
 	task.spawn(function()
 		for _, p in ipairs(farm.Important.Plants_Physical:GetChildren()) do
 			if not run then break end
-			for _, f in ipairs(plat_traits_data.Summer) do
+			if isBlacklisted(p.Name) then continue end
+			for _, f in ipairs(fruit) do
 				if p.Name:find(f, 1, true) then
 					net:FireServer(buffer, { p })
 					local f2 = p:FindFirstChild("Fruits", true)
@@ -64,6 +58,23 @@ local function collect()
 	end)
 end
 
+local ui = wind_ui:CreateWindow({
+	Title = "Summer Harvest",
+	Icon = "rbxassetid://129260712070622",
+	IconThemed = true,
+	Author = "another21",
+	Folder = "nah",
+	Size = UDim2.fromOffset(580, 460),
+	Transparent = true,
+	Theme = "Dark",
+	HideSearchBar = true,
+	User = {Enabled = true},
+	SideBarWidth = 200,
+	ScrollBarEnabled = true,
+})
+
+local tab = ui:Section({ Title = "Menu", Opened = true }):Tab({ Title = "Main", Icon = "home" })
+
 tab:Toggle({
 	Title = "Auto Summer Event",
 	Value = false,
@@ -71,23 +82,28 @@ tab:Toggle({
 })
 
 tab:Dropdown({
-    Title = "Submit Method:",
-    Values = { "When Backpack Full", "After Harvest" },
-    Value = "When Backpack Full",
-    Callback = function(option)
-        if option:find("Backpack Full") then
-            method = 1
-        else
-            method = 2
-        end
-    end
+	Title = "Submit Method:",
+	Values = { "When Backpack Full", "After Harvest" },
+	Value = "When Backpack Full",
+	Callback = function(v) method = v:find("Backpack") and 1 or 2 end
 })
 
-tab:Button({
-	Title = "Submit",
-	Callback = function()
-		rs.GameEvents.SummerHarvestRemoteEvent:FireServer("SubmitAllPlants")
-	end,
+tab:Dropdown({
+	Title = "Blacklist Fruit",
+	Values = fruit,
+	Value = {},
+	Multi = true,
+	AllowNone = true,
+	Callback = function(v) blacklist = v end
+})
+
+tab:Input({
+	Title = "Target Points:",
+	Desc = "Enter Summer Points target",
+	Value = 0,
+	Type = "Input",
+	Placeholder = "Number only.",
+	Callback = function(v) if tonumber(v) then target = tonumber(v) end end
 })
 
 tab:Toggle({
@@ -107,9 +123,11 @@ local point = tab:Paragraph({ Title = "Points:", Desc = "" })
 local time = tab:Paragraph({ Title = "Timer:", Desc = "" })
 
 task.spawn(function()
+	local points = 0
 	while true do
 		if hidenotif then
-			local notif = lp:FindFirstChild("PlayerGui") and lp.PlayerGui:FindFirstChild("Top_Notification")
+			local gui = lp:FindFirstChild("PlayerGui")
+			local notif = gui and gui:FindFirstChild("Top_Notification")
 			if notif then
 				for _, f in ipairs(notif.Frame:GetChildren()) do
 					if f:IsA("Frame") and f:FindFirstChildWhichIsA("TextLabel") then
@@ -119,17 +137,20 @@ task.spawn(function()
 			end
 		end
 
+		local active = workspace:GetAttribute("SummerHarvest") == true
+
 		for _, o in ipairs(workspace.SummerHarvestEvent.RewardSign:GetDescendants()) do
 			if o:IsA("TextLabel") and o.Name == "PointTextLabel" then
 				point:SetDesc(o.Text:match("%d+") or "0")
+				points = tonumber(o.Text:match("%d+")) or 0
 				break
 			end
 		end
-		
+
 		for _, o in ipairs(workspace.SummerHarvestEvent.RewardSign:GetDescendants()) do
 			if o:IsA("TextLabel") and o.Name == "RewardTextLabel" then
-			    point:SetTitle(o.Text)
-			    break
+				point:SetTitle(o.Text)
+				break
 			end
 		end
 
@@ -139,8 +160,14 @@ task.spawn(function()
 			time:SetDesc(s.BillboardGui.Timer.Text)
 		end
 
-		if run and workspace:GetAttribute("SummerHarvest") then
-			collect()
+		if run then
+			if not active then
+				run = false
+			elseif target ~= 0 and points >= target then
+				run = false
+			else
+				collect()
+			end
 		end
 
 		task.wait(0.1)
